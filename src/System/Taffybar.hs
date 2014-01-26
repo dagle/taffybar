@@ -122,6 +122,7 @@ module System.Taffybar (
   defaultTaffybar,
   defaultTaffybarConfig,
   Position(..),
+  taffybarSetDir,
   taffybarMain
   ) where
 
@@ -195,6 +196,13 @@ defaultParams = Dyre.defaultParams { Dyre.projectName = "taffybar"
 -- | The entry point of the application.  Feed it a custom config.
 defaultTaffybar :: TaffybarConfig -> IO ()
 defaultTaffybar = Dyre.wrapMain defaultParams
+
+-- | This is beyond horrible but just an example
+taffybarSetDir :: String -> TaffybarConfig -> IO ()
+taffybarSetDir dir = Dyre.wrapMain defaultParams{ Dyre.configDir = Just $ return dir
+                                                , Dyre.cacheDir = Just $ return dir
+                                                }
+
 
 realMain :: TaffybarConfig -> IO ()
 realMain cfg = do

@@ -3,7 +3,11 @@
 module Main ( main ) where
 
 import System.Taffybar
+import System.Environment
 
 main :: IO ()
 main = do
-  defaultTaffybar defaultTaffybarConfig
+  args <- getArgs
+  if length args == 0 
+    then defaultTaffybar defaultTaffybarConfig
+    else taffybarSetDir (args !! 0) defaultTaffybarConfig
