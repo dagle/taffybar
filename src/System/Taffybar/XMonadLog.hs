@@ -13,9 +13,12 @@
 module System.Taffybar.XMonadLog (
   -- * Constructor
   xmonadLogNew,
+  xmonadLogNewName,
   -- * Log hooks for xmonad.hs
   dbusLog,
   dbusLogWithPP,
+  dbusLogName,
+  dbusLogWithPPName,
   -- * Styles
   taffybarPP,
   taffybarDefaultPP,
@@ -24,7 +27,7 @@ module System.Taffybar.XMonadLog (
   ) where
 
 import Codec.Binary.UTF8.String ( decodeString )
-import DBus ( toVariant, fromVariant, Signal(..), signal )
+import DBus ( MemberName, toVariant, fromVariant, Signal(..), signal )
 import DBus.Client ( listen, matchAny, MatchRule(..), connectSession, emit, Client )
 import Graphics.UI.Gtk hiding ( Signal )
 
@@ -34,12 +37,18 @@ import XMonad.Hooks.DynamicLog
 -- | This is a DBus-based logger that can be used from XMonad to log
 -- to this widget.  This version lets you specify the format for the
 -- log using a pretty printer (e.g., 'taffybarPP').
+dbusLogWithPPName :: Client -> MemberName -> PP -> X ()
+dbusLogWithPPName client name pp = dynamicLogWithPP pp { ppOutput = outputThroughDBus client name }
+
 dbusLogWithPP :: Client -> PP -> X ()
-dbusLogWithPP client pp = dynamicLogWithPP pp { ppOutput = outputThroughDBus client }
+dbusLogWithPP client pp = dbusLogWithPPName client "Update" pp
 
 -- | A DBus-based logger with a default pretty-print configuration
 dbusLog :: Client -> X ()
-dbusLog client = dbusLogWithPP client taffybarDefaultPP
+dbusLog client = dbusLogName client "Update"
+
+dbusLogName :: Client -> MemberName -> X ()
+dbusLogName client name = dbusLogWithPPName client name taffybarDefaultPP
 
 taffybarColor :: String -> String -> String -> String
 taffybarColor fg bg = wrap t "</span>" . taffybarEscape
@@ -71,22 +80,22 @@ taffybarPP = taffybarDefaultPP { ppCurrent = taffybarColor "yellow" "" . wrap "[
 
 
 
-outputThroughDBus :: Client -> String -> IO ()
-outputThroughDBus client str = do
+outputThroughDBus :: Client -> MemberName -> String -> IO ()
+outputThroughDBus client name str = do
   -- The string that we get from XMonad here isn't quite a normal
   -- string - each character is actually a byte in a utf8 encoding.
   -- We need to decode the string back into a real String before we
   -- send it over dbus.
   let str' = decodeString str
-  emit client (signal "/org/xmonad/Log" "org.xmonad.Log" "Update") { signalBody = [ toVariant str' ] }
+  emit client (signal "/org/xmonad/Log" "org.xmonad.Log" name) { signalBody = [ toVariant str' ] }
 
-setupDbus :: Label -> IO ()
-setupDbus w = do
+setupDbus :: Label -> MemberName -> IO ()
+setupDbus w name = do
   let matcher = matchAny { matchSender = Nothing
                           , matchDestination = Nothing
                           , matchPath = Just "/org/xmonad/Log"
                           , matchInterface = Just "org.xmonad.Log"
-                          , matchMember = Just "Update"
+                          , matchMember = Just name
                           }
 
   client <- connectSession
@@ -101,8 +110,11 @@ callback w sig = do
 
 -- | Return a new XMonad log widget
 xmonadLogNew :: IO Widget
-xmonadLogNew = do
+xmonadLogNew = xmonadLogNewName "Update"
+
+xmonadLogNewName :: MemberName -> IO Widget
+xmonadLogNewName name = do
   l <- labelNew Nothing
-  _ <- on l realize $ setupDbus l
+  _ <- on l realize $ setupDbus l name
   widgetShowAll l
   return (toWidget l)
