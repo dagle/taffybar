@@ -32,18 +32,12 @@ pollingVolume interval conf  = do
 ignoreIOException :: IOException -> IO ()
 ignoreIOException _ = return ()
 
--- really horrible, should use a transformer or something
 setVolumeButton :: ScaleButtonClass o => o -> VolumeConfig -> IO ()
 setVolumeButton vol conf =
     case (displayType conf) of
     Normalized -> do
-        maybe' <- getGenericVolume conf
-        if maybe' /= Nothing
-            then let (Just (volume,_,_)) = maybe' in set vol [scaleButtonValue := volume]
-            else return ()
+        getGenericVolume conf >>= maybe (return ()) (\(volume,_,_) 
+            -> set vol [scaleButtonValue := volume])
     _ -> do
-        maybe' <- getGenericVolume conf
-        if maybe' /= Nothing
-            then let (Just (val,high,low)) = maybe' in set vol [scaleButtonValue := (percent val high low)]
-            else return ()
-
+        getGenericVolume conf >>= maybe (return ()) (\(volume,high,low) 
+            -> set vol [scaleButtonValue := (percent volume high low)])
