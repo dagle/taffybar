@@ -79,7 +79,7 @@ library
                  HStringTemplate, gtk-traymanager >= 0.1.2 && < 0.2, xmonad-contrib, xmonad,
                  xdg-basedir, filepath, utf8-string, process, stm, transformers >= 0.3.0.0,
                  X11 >= 1.5.0.1, split >= 0.1.4.2, alsa-mixer >= 0.1.2, hinotify >= 0.3.6,
-                 directory >= 1.2.0.1
+                 directory >= 1.2.0.1, libmpd, curl, aeson, bytestring, template-haskell
   hs-source-dirs: src
   pkgconfig-depends: gtk+-2.0
   exposed-modules: System.Taffybar,
@@ -109,16 +109,20 @@ library
                    System.Taffybar.Widgets.PollingLabel,
                    System.Taffybar.Widgets.Util,
                    System.Taffybar.Widgets.VerticalBar,
+                   System.Taffybar.Widgets.PollingList,
+                   System.Taffybar.TwitchMonitor,
+                   System.Taffybar.Mpd,
+                   System.Information.Twitch,
                    System.Information.StreamInfo,
                    System.Information.Battery,
                    System.Information.EWMHDesktopInfo,
                    System.Information.X11DesktopInfo,
                    System.Information.Memory,
-                   System.Information.Mail
+                   System.Information.Mail,
                    System.Information.Network,
                    System.Information.CPU,
                    System.Information.CPU2,
-                   System.Information.DiskIO
+                   System.Information.DiskIO,
                    System.Information.Alsa
   other-modules: System.Taffybar.StrutProperties,
                  Paths_taffybar

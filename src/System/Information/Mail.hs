@@ -5,7 +5,6 @@ module System.Information.Mail (
     , hookMail
     , unpackMail
     , getSubject
---    , parseTitle
     ) where
 
 import System.Directory
@@ -24,7 +23,7 @@ data MailConfig = MailConfig [(
     , FilePath -- Path to the maildir
     )]
 
--- Create a bunch of mailboxes 
+-- Create a bunch of mailboxes
 initMail :: MailConfig -> IO [TVar (S.Set String)]
 initMail (MailConfig pairs) = mapM (const $ newTVarIO S.empty) pairs
 
@@ -43,13 +42,13 @@ hookMail (MailConfig pairs) f vs = do
         ev = [Move, MoveIn, MoveOut, Create, Delete]
     ds <- mapM expandHome newmail
     i <- initINotify
-    zipWithM_ (\dir var -> addWatch i ev dir (handle var)) ds vs 
-    
+    zipWithM_ (\dir var -> addWatch i ev dir (handle var)) ds vs
+
     forM_ (zip ds vs) $ \(d, v) -> do
         s <- fmap (S.fromList . filter (not . isPrefixOf "."))
             $ getDirectoryContents d
         atomically $ modifyTVar v (S.union s)
-    
+
     changeLoop (mapM (fmap S.toList . readTVar) vs) $ \mails ->
         f (zipWith (,) inboxes mails)
 
@@ -84,6 +83,7 @@ unpackMail path = do
 parseMail :: GenParser Char st ([(String, String)], [String])
 parseMail = do
     header <- many headerLine
+    _ <- emptyLine
     body <- many bodyLine
     eof
     return $ (header, body)
@@ -92,6 +92,8 @@ eol :: GenParser Char st Char
 eol = char '\n'
 colon :: GenParser Char st Char
 colon = char ':'
+emptyLine:: GenParser Char st Char
+emptyLine = char '\n'
 
 headerLine :: GenParser Char st (String, String)
 headerLine = do

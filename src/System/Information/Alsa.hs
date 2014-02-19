@@ -37,6 +37,7 @@ data VolumeConfig =
                  , button :: Maybe (IO ()) -- The button, we use this intrenaly to set update values
     }
 
+-- default vaule for Alsa, for PulseAudio use: mixer = pulse, displayType = Raw
 defaultVolumeConfig :: VolumeConfig
 defaultVolumeConfig = VolumeConfig {
     mixer = "default"
@@ -80,7 +81,9 @@ getVal fetch (Just v) = liftIO $ getChannel FrontLeft $ fetch v
 
 setVal :: (t -> PerChannel x) -> Maybe t -> x -> IO ()
 setVal _ Nothing _ = return ()
-setVal fetch (Just v) i = setChannel FrontLeft (fetch v) i
+setVal fetch (Just v) i = do
+    setChannel FrontLeft (fetch v) i
+    setChannel FrontRight (fetch v) i
 
 -- merges a triplet of Maybes to a Maybe of triplets
 mergeM :: (Integral a, Integral a1, Integral a2, Num t, Num t1, Num t2) =>
@@ -145,6 +148,7 @@ setGenericVolume vol conf@(VolumeConfig _ _ v _) =
         Db -> setDbVolume vol conf
         Normalized -> setNormalizedVolume vol conf
 
+-- never ever use fromJust like this
 setVolume :: Double -> (Volume -> IO (Integer, Integer)) -> (Volume -> PerChannel Integer) -> VolumeConfig -> IO ()
 setVolume vol range fetch (VolumeConfig mix controler _ _) = do
     control' <- liftIO $ getControlByName mix controler
