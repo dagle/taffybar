@@ -1,19 +1,19 @@
 module System.Information.Sensors (
     getCpuTemp
+    , getCpuTempDevice
     , getNvidiaTemp
 ) where 
 import System.Process
 import Control.Exception as E
 
--- This module is a bit ugly and I'm not sure if portable in the cpu case, I guess I should wrap lm-sensors 
--- with chs bindings but that is for the future
-
 getCpuTemp :: IO String
-getCpuTemp = do
-    let action = do sensor <- readProcess "sensors" [] ""
-                    let line = (lines sensor) !! 2
-                    let word = (words line) !! 3
-                    return $ init . init . tail $ word
+getCpuTemp = getCpuTempDevice "/sys/class/hwmon/hwmon0/device/temp1_input"
+
+getCpuTempDevice :: String -> IO String
+getCpuTempDevice dev = do
+    let action = do sensor <- readFile dev
+                    let d = read sensor :: Double
+                    return $ show $ d / 1000
     E.catch action ignoreIOException
 
 getNvidiaTemp :: IO String
