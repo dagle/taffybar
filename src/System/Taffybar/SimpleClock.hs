@@ -8,7 +8,6 @@ module System.Taffybar.SimpleClock (
   ClockConfig(..)
   ) where
 
-import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.Maybe ( fromMaybe )
 import Data.Time.Calendar ( toGregorian )
 import qualified Data.Time.Clock as Clock
@@ -16,38 +15,13 @@ import Data.Time.Format
 import Data.Time.LocalTime
 import Graphics.UI.Gtk
 import System.Locale
-
-import System.Taffybar.Widgets.PollingLabel
-import System.Taffybar.Widgets.Util
-
-makeCalendar :: IO Window
-makeCalendar = do
-  container <- windowNew
-  cal <- calendarNew
-  containerAdd container cal
-  -- update the date on show
-  _ <- onShow container $ liftIO $ resetCalendarDate cal
-  -- prevent calendar from being destroyed, it can be only hidden:
-  _ <- on container deleteEvent $ do
-    liftIO (widgetHideAll container)
-    return True
-  return container
+import System.Taffybar.Widgets.AttachedPopup
 
 resetCalendarDate :: Calendar -> IO ()
 resetCalendarDate cal = do
   (y,m,d) <- Clock.getCurrentTime >>= return . toGregorian . Clock.utctDay
   calendarSelectMonth cal (fromIntegral m - 1) (fromIntegral y)
   calendarSelectDay cal (fromIntegral d)
-
-toggleCalendar :: WidgetClass w => w -> Window -> IO Bool
-toggleCalendar w c = do
-  isVis <- get c widgetVisible
-  if isVis
-    then widgetHideAll c
-    else do
-      attachPopup w "Calendar" c
-      displayPopup w c
-  return True
 
 -- | Create the widget.  I recommend passing @Nothing@ for the
 -- TimeLocale parameter.  The format string can include Pango markup
@@ -76,14 +50,11 @@ textClockNewWith cfg fmt updateSeconds = do
   defaultTimeZone <- getCurrentTimeZone
   let timeLocale = fromMaybe defaultTimeLocale userLocale
       timeZone = fromMaybe defaultTimeZone userZone
-  l    <- pollingLabelNew "" updateSeconds (getCurrentTime' timeLocale fmt timeZone)
-  ebox <- eventBoxNew
-  containerAdd ebox l
-  eventBoxSetVisibleWindow ebox False
-  cal <- makeCalendar
-  _ <- on ebox buttonPressEvent $ onClick [SingleClick] (toggleCalendar l cal)
-  widgetShowAll ebox
-  return (toWidget ebox)
+  let clockListCfg = PopupConfig
+        (\_ (h,_) -> getCurrentTime' timeLocale fmt timeZone >>= labelSetMarkup h) 
+        (\_ (_, cal) -> resetCalendarDate cal)
+        id "Calendar" ()
+  pollingPopupNew clockListCfg (labelNew Nothing) calendarNew updateSeconds
   where
     userZone = clockTimeZone cfg
     userLocale = clockTimeLocale cfg

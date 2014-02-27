@@ -4,6 +4,7 @@ module System.Information.Twitch (
     , getOnline
     , getName
     , getStream
+    , getTopic
 
     , Twitch(Twitch)
     , twitchStream
@@ -49,9 +50,9 @@ data Self = Self {
     } deriving (Eq, Generic, Show)
 
 data Stream = Stream {
-    stream_Id :: Int
+    stream_Id :: Integer
     , streamGame :: String
-    , streamViewers :: Int
+    , streamViewers :: Integer
     , streamPreview :: Preview
     , stream_Links :: Self2
     , streamChannel :: Channel
@@ -66,27 +67,27 @@ data Preview = Preview {
 
 data Channel = Channel {
     _channelMature :: Maybe Bool
-    , _channelAbuse_reported :: Maybe Int
+    , _channelAbuse_reported :: Maybe Integer
     , channelStatus :: String
     , _channelDisplay_name :: String
     , channelGame :: String
-    , _channelDelay :: Int
-    , _channel_Id :: Int
+    , _channelDelay :: Integer
+    , _channel_Id :: Integer
     , channelName :: String
     , _channelCreated_at :: String
     , _channelUpdated_at :: String
     , _channelPrimary_team_name :: Maybe String
     , _channelPrimary_team_display_name :: Maybe String
     , _channelLogo :: String
-    , _channelBanner :: String
-    , _channelVideo_banner :: String
-    , _channelBackground :: String
+    , _channelBanner :: Maybe String
+    , _channelVideo_banner :: Maybe String
+    , _channelBackground :: Maybe String
     , _channelProfile_banner :: Maybe String
     , _channelProfile_banner_background_color :: Maybe String
     , channelUrl :: String
-    , channelViews :: Int
-    , channelFollowers :: Int
-    , _channel_Links :: Links
+    , channelViews :: Integer
+    , channelFollowers :: Integer
+--    , _channel_Links :: Links
 } deriving (Eq, Generic, Show)
 
 data Links = Links {
@@ -130,6 +131,9 @@ getOnline = maybe False ((/=) Nothing . twitchStream)
 
 getName :: Maybe Twitch -> String
 getName stream = maybe "" (channelName . streamChannel) $ stream >>= twitchStream
+
+getTopic :: Maybe Twitch -> String 
+getTopic stream = maybe "" (channelStatus . streamChannel) $ stream >>= twitchStream
 
 getStream :: Maybe Twitch -> String
 getStream t =

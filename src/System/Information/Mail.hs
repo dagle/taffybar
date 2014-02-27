@@ -5,6 +5,7 @@ module System.Information.Mail (
     , hookMail
     , unpackMail
     , getSubject
+    , defaultMailConfig
     ) where
 
 import System.Directory
@@ -23,6 +24,8 @@ data MailConfig = MailConfig [(
     , FilePath -- Path to the maildir
     )]
 
+defaultMailConfig :: MailConfig
+defaultMailConfig = MailConfig [("Mail", "~/mail")]
 -- Create a bunch of mailboxes
 initMail :: MailConfig -> IO [TVar (S.Set String)]
 initMail (MailConfig pairs) = mapM (const $ newTVarIO S.empty) pairs
