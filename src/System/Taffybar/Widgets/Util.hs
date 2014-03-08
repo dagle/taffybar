@@ -12,11 +12,47 @@
 --
 -----------------------------------------------------------------------------
 
-module System.Taffybar.Widgets.Util where
+module System.Taffybar.Widgets.Util (
+    onClick
+    , attachPopup
+    , displayPopup
+    , expandPath
+    ) where
 
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Graphics.UI.Gtk
+import Data.List.Split
+import Data.List
+import System.Environment
+
+-- | This function does tilde and environment variable expansion
+-- you can then use glob on this or just return a single file
+--expandPath :: FilePath -> IO FilePath
+expandPath path = do
+    let detilde = changeTilde path
+        dirs = splitOn "/" $ detilde
+        vars = map (splitter "$") dirs
+    str <- mapM (mapM expand) vars
+    return $ merge str
+
+-- | Changes a tilde to $HOME
+changeTilde :: String -> String
+changeTilde s = concat $ map (\x -> if x == '~' then "$HOME" else [x]) s
+
+merge x = let slashes = map (map (\x -> x ++ "/")) $ init x
+          in concat $ concat $ slashes ++ [last x]
+
+splitter :: Eq a => [a] -> [a] -> [[a]]
+splitter = split . keepDelimsL . onSublist
+
+expand [] = return []
+expand x = case x of
+    ('$':'{':xs) -> do str <- getEnv $ takeWhile ((/=) '}') xs
+                       let rest = tail $ dropWhile ((/=) '}') xs
+                       return $ str ++ rest
+    ('$':xs) -> getEnv xs
+    _ -> return x
 
 -- | Execute the given action as a response to any of the given types
 -- of mouse button clicks.
