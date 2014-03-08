@@ -24,6 +24,7 @@ module System.Information.EWMHDesktopInfo
   , withDefaultCtx -- re-exported from X11DesktopInfo
   , isWindowUrgent -- re-exported from X11DesktopInfo
   , getCurrentWorkspace
+  , getCurrentScreen
   , getVisibleWorkspaces
   , getWorkspaceNames
   , switchToWorkspace
@@ -39,6 +40,7 @@ module System.Information.EWMHDesktopInfo
 import Data.List (elemIndex)
 import Data.Maybe (listToMaybe, mapMaybe)
 import System.Information.X11DesktopInfo
+import Control.Monad
 
 noFocus :: String
 noFocus = "..."
@@ -48,12 +50,15 @@ noFocus = "..."
 getCurrentWorkspace :: X11Property Int
 getCurrentWorkspace = readAsInt Nothing "_NET_CURRENT_DESKTOP"
 
+getCurrentScreen :: X11Property Int
+getCurrentScreen = readAsInt Nothing "_XMONAD_ACTIVE_SCREEN"
+
 -- | Retrieve the indexes of all currently visible workspaces
 -- with the active workspace at the head of the list.
-getVisibleWorkspaces :: X11Property [Int]
-getVisibleWorkspaces = do
+getVisibleWorkspaces :: ([String] -> [String]) -> X11Property [Int]
+getVisibleWorkspaces f = do
   vis <- getVisibleTags
-  allNames <- getWorkspaceNames
+  allNames <- liftM f getWorkspaceNames
   cur <- getCurrentWorkspace
   return $ cur : mapMaybe (`elemIndex` allNames) vis
 

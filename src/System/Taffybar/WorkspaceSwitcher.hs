@@ -97,7 +97,8 @@ allWorkspaces desktop = [0 .. length desktop - 1]
 -- workspace and a String with its default (unmarked) representation.
 getDesktop :: Pager -> IO Desktop
 getDesktop pager = do
-  names  <- withDefaultCtx getWorkspaceNames
+  let filt = sortWorkspace $ config pager
+  names  <- liftM filt $ withDefaultCtx getWorkspaceNames
   labels <- toLabels $ map (hiddenWorkspace $ config pager) names
   return $ zipWith (\n l -> Workspace l n False) names labels
 
@@ -114,7 +115,7 @@ assembleWidget desktop = do
 -- the active workspace in the desktop.
 activeCallback :: PagerConfig -> IORef Desktop -> Event -> IO ()
 activeCallback cfg deskRef _ = do
-  curr <- withDefaultCtx getVisibleWorkspaces
+  curr <- withDefaultCtx $ getVisibleWorkspaces (sortWorkspace cfg)
   desktop <- readIORef deskRef
   let visible = head curr
   when (urgent $ desktop !! visible) $

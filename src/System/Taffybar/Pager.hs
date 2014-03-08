@@ -38,6 +38,7 @@ module System.Taffybar.Pager
   , shorten
   , wrap
   , escape
+  , marshallSort
   ) where
 
 import Control.Concurrent (forkIO)
@@ -48,7 +49,9 @@ import Graphics.UI.Gtk (Markup, escapeMarkup)
 import Graphics.X11.Types
 import Graphics.X11.Xlib.Extras
 import Text.Printf (printf)
-
+-- this shouldn't be imported here but meh
+import XMonad.Layout.IndependentScreens
+import qualified XMonad.Core as C
 import System.Information.X11DesktopInfo
 
 type Listener = Event -> IO ()
@@ -66,6 +69,8 @@ data PagerConfig = PagerConfig
   , visibleWorkspace :: String -> Markup -- ^ all other visible workspaces (Xinerama or XRandR).
   , urgentWorkspace  :: String -> Markup -- ^ workspaces containing windows with the urgency hint set.
   , widgetSep        :: Markup           -- ^ separator to use between desktop widgets in 'TaffyPager'.
+  , sortWorkspace    :: [String] -> [String]  -- ^ The order workspaces should be displayed (filtered). 
+  , screenId         :: C.ScreenId -- ^ Id of the screen this logger is running on
   }
 
 -- | Structure containing the state of the Pager.
@@ -85,7 +90,11 @@ defaultPagerConfig   = PagerConfig
   , visibleWorkspace = wrap "(" ")" . escape
   , urgentWorkspace  = colorize "red" "yellow" . escape
   , widgetSep        = " : "
+  , sortWorkspace    = id
+  , screenId         = C.S 1
   }
+
+marshallSort s vSort = vSort . filter ((== s) . unmarshallS)
 
 -- | Creates a new Pager component (wrapped in the IO Monad) that can be
 -- used by widgets for subscribing X11 events.

@@ -74,6 +74,8 @@ pagerHintsLogHook = do
     (setCurrentLayout . description . W.layout . W.workspace . W.current)
   withWindowSet
     (setVisibleWorkspaces . map (W.tag . W.workspace) . W.visible)
+  withWindowSet
+    (setScreenNumber . W.screen . W.current)
 
 -- | Set the value of the \"Current Layout\" custom hint to the one given.
 setCurrentLayout :: String -> X ()
@@ -93,6 +95,13 @@ setVisibleWorkspaces vis = withDisplay $ \dpy -> do
   let vis' = map fromIntegral $ concatMap ((++[0]) . encode) vis
   io $ changeProperty8 dpy r a c propModeReplace vis'
 
+setScreenNumber :: (Integral a) => a -> X ()
+setScreenNumber n = withDisplay $ \dpy -> do
+  r <- asks theRoot
+  a <- getAtom "_XMONAD_ACTIVE_SCREEN"
+  c <- getAtom "CARDINAL"
+  io $ changeProperty8 dpy r a c propModeReplace [fromIntegral n]
+  
 -- | Handle all \"Current Layout\" events received from pager widgets, and
 -- set the current layout accordingly.
 pagerHintsEventHook :: Event -> X All

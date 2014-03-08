@@ -32,6 +32,8 @@ import Graphics.X11.Xlib.Extras (Event)
 import System.Information.EWMHDesktopInfo
 import System.Taffybar.Pager
 import System.Taffybar.Widgets.Util
+import Control.Monad
+import qualified XMonad.Core as C
 
 -- $usage
 --
@@ -69,8 +71,11 @@ windowSwitcherNew pager = do
 pagerCallback :: PagerConfig -> Label -> Event -> IO ()
 pagerCallback cfg label _ = do
   title <- withDefaultCtx getActiveWindowTitle
+  screen' <- withDefaultCtx getCurrentScreen
   let decorate = activeWindow cfg
-  postGUIAsync $ labelSetMarkup label (decorate title)
+      screen = screenId cfg
+  when (screen == (C.S screen')) $
+      postGUIAsync $ labelSetMarkup label (decorate title)
 
 -- | Build the graphical representation of the widget.
 assembleWidget :: Label -> IO Widget

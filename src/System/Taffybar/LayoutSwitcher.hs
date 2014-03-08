@@ -30,7 +30,10 @@ import Graphics.UI.Gtk
 import Graphics.X11.Xlib.Extras (Event)
 import System.Taffybar.Pager
 import System.Information.X11DesktopInfo
+import System.Information.EWMHDesktopInfo
+import Control.Monad
 import System.Taffybar.Widgets.Util
+import qualified XMonad.Core as C
 
 -- $usage
 --
@@ -73,8 +76,11 @@ layoutSwitcherNew pager = do
 pagerCallback :: PagerConfig -> Label -> Event -> IO ()
 pagerCallback cfg label _ = do
   layout <- withDefaultCtx $ readAsString Nothing xLayoutProp
+  active <- withDefaultCtx getCurrentScreen
   let decorate = activeLayout cfg
-  postGUIAsync $ labelSetMarkup label (decorate layout)
+      screen = screenId cfg
+  when ((C.S active) == screen) $
+      postGUIAsync $ labelSetMarkup label (decorate layout)
 
 -- | Build the graphical representation of the widget.
 assembleWidget :: Label -> IO Widget
