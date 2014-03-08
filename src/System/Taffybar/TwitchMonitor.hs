@@ -30,9 +30,9 @@ twitchListCfg :: (TwitchMonitor -> (b, c) -> IO ()) -> TwitchMonitor -> PopupCon
 twitchListCfg f cfg = PopupConfig f
             (const . const $ return ()) (wrapper cfg) "Twitch" cfg
 
-twitchTextMonitorNew :: TwitchMonitor -> IO Widget
-twitchTextMonitorNew cfg = do
-    pollingPopupNew (twitchListCfg getChannels cfg)
+twitchTextMonitorNew :: TwitchMonitor -> String -> IO Widget
+twitchTextMonitorNew cfg lab = do
+    pollingPopupNew (twitchListCfg (getChannels lab) cfg)
         (labelNew Nothing) (labelNew Nothing) 300
 
 twitchIconMonitorNew :: TwitchMonitor -> IO Widget
@@ -54,7 +54,7 @@ updateIcon var cfg (header, body) = do
     atomically $ writeTVar var h
     labelSetMarkup body l >> widgetQueueDraw header
 
-getChannels :: TwitchMonitor -> (Label, Label) -> IO ()
-getChannels cfg (header, body) = do
+getChannels :: String -> TwitchMonitor -> (Label, Label) -> IO ()
+getChannels lab cfg (header, body) = do
     (h, l) <- getStrings cfg
-    labelSetMarkup header ("Twitch: " ++ h) >> labelSetMarkup body l
+    labelSetMarkup header (lab ++ h) >> labelSetMarkup body l

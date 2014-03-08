@@ -24,12 +24,12 @@ mailIconNew cfg = do
     _ <- forkIO $ hookMail cfg (const $ widgetQueueDraw header) c
     return w
 
-mailTextNew :: MailConfig -> IO Widget
-mailTextNew cfg = do
+mailTextNew :: MailConfig -> String -> IO Widget
+mailTextNew cfg lab = do
     c <- initMail cfg
     let listMailcfg = PopupConfig undefined displayMail id "Mails" c
     (w, header, _) <- popupBoxNew listMailcfg (labelNew Nothing) (labelNew Nothing)
-    _ <- forkIO $ hookMail cfg (countMail header) c
+    _ <- forkIO $ hookMail cfg (countMail lab header) c
     return w
 
 ignoreIOException :: IOException -> IO ()
@@ -40,10 +40,10 @@ count c = getMail c >>= (\m -> return $ show . length . concat $ m)
 
 --countMail :: [TVar (S.Set String)] -> Label -> IO ()
 countMail :: LabelClass self =>
-        self -> [(a1, [a])] -> IO ()
-countMail h mails = do
+        String -> self -> [(a1, [a])] -> IO ()
+countMail lab h mails = do
     let str = show . length . concat . map snd $ mails
-    E.catch (postGUIAsync $ labelSetMarkup h $ "Mails: " ++ str) ignoreIOException
+    E.catch (postGUIAsync $ labelSetMarkup h $ lab ++ str) ignoreIOException
 
 -- Needs to improve, looks really ugly atm
 displayMail :: [TVar (S.Set String)] -> (a, Label) -> IO ()

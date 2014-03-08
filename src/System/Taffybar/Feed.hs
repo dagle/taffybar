@@ -24,9 +24,9 @@ data FeedConfig = FeedConfig {
 defaultFeedConfig :: FeedConfig
 defaultFeedConfig = FeedConfig "http://planet.haskell.org/atom.xml" id
 
-feedTextMonitorNew :: FeedConfig -> IO Widget
-feedTextMonitorNew cfg = do
-    let feedListCfg = PopupConfig getLabel
+feedTextMonitorNew :: FeedConfig -> String -> IO Widget
+feedTextMonitorNew cfg lab = do
+    let feedListCfg = PopupConfig (getLabel lab)
             (const . const $ return ()) id "Feed" cfg
     pollingPopupNew feedListCfg (labelNew Nothing) (labelNew Nothing) 300
 
@@ -60,10 +60,10 @@ getStrings cfg = do
     return (hStr, lStr)
 
 -- Writes the header and the links to the labellist
-getLabel :: FeedConfig -> (Label, Label) -> IO ()
-getLabel cfg (header, body) = do
+getLabel :: String -> FeedConfig -> (Label, Label) -> IO ()
+getLabel lab cfg (header, body) = do
     (hStr, lStr) <- getStrings cfg
-    postGUIAsync $ labelSetMarkup body lStr >> labelSetMarkup header hStr
+    postGUIAsync $ labelSetMarkup body lStr >> labelSetMarkup header (lab ++ hStr)
 
 getIcon :: (WidgetClass self1, LabelClass self) => 
         TVar String -> FeedConfig -> (self1, self) -> IO ()
